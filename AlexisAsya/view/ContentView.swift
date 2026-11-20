@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedType: String? = nil
     @State private var showFilterSheet = false
+    @Environment(AuthViewModel.self) private var auth
 
     let allTypes = ["normal", "fire", "water", "grass", "electric", "psychic",
                     "ice", "dragon", "dark", "fighting", "poison", "ground",
@@ -100,6 +101,13 @@ struct ContentView: View {
                     }
                 }
                 .navigationTitle("PokéApp")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Déconnexion") {
+                            auth.signOut()
+                        }
+                    }
+                }
                 .task {
                     await viewModel.loadAllPokemonNames()
                 }
@@ -170,7 +178,3 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environment(PokemonFavoriteViewModel())
-}

@@ -8,10 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		1B6D890B2FC9B3150023E3BF /* PokemonAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 1B6D890A2FC9B3150023E3BF /* PokemonAPI */; };
+		1B862B8530B03BC10044DFD3 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C4D5E6F708192A3B4D /* FirebaseCore */; };
+		1B862B8630B03BC10044DFD3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C4D5E6F708192A3B4E /* FirebaseAuth */; };
 		A1B2C3D4000000000000000D /* AlexisAsyaWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* AlexisAsyaWatch.app */; };
 		A1B2C3D40000000000000020 /* AlexisAsyaWatchComplication.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000015 /* AlexisAsyaWatchComplication.appex */; };
 		A1B2C3D40000000000000024 /* AlexisAsyaWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000021 /* AlexisAsyaWidget.appex */; };
 		A1B2C3D4000000000000003C /* PokemonAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 1B6D890A2FC9B3150023E3BF /* PokemonAPI */; };
+		F2A2B3C4D5E6F708192A3B4D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F2A2B3C4D5E6F708192A3B4C /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +90,7 @@
 		A1B2C3D40000000000000015 /* AlexisAsyaWatchComplication.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AlexisAsyaWatchComplication.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D40000000000000021 /* AlexisAsyaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AlexisAsyaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D40000000000000030 /* AlexisAsyaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlexisAsyaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2A2B3C4D5E6F708192A3B4C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -127,6 +131,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B862B8630B03BC10044DFD3 /* FirebaseAuth in Frameworks */,
+				1B862B8530B03BC10044DFD3 /* FirebaseCore in Frameworks */,
 				1B6D890B2FC9B3150023E3BF /* PokemonAPI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -166,6 +172,7 @@
 		1B6D88B82FC989CC0023E3BF = {
 			isa = PBXGroup;
 			children = (
+				F2A2B3C4D5E6F708192A3B4C /* GoogleService-Info.plist */,
 				1B6D88C32FC989CC0023E3BF /* AlexisAsya */,
 				A1B2C3D40000000000000003 /* AlexisAsyaWatch */,
 				A1B2C3D40000000000000016 /* AlexisAsyaWatchComplication */,
@@ -374,6 +381,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2A2B3C4D5E6F708192A3B4D /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
