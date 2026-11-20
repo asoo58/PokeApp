@@ -107,15 +107,16 @@ La barre de recherche est **tout en haut de la page d'accueil**, au-dessus du Po
 L'app affiche un **écran de connexion** tant qu'aucun utilisateur n'est connecté (`AlexisAsya/view/LoginView.swift`) :
 
 - **E-mail / mot de passe** : inscription (`Créer un compte`) et connexion ;
-- **Continuer avec Google** : connexion via le flux OAuth web officiel de Firebase Auth (`OAuthProvider(providerID: "google.com")`). Aucun SDK Google supplémentaire n'est nécessaire : le schéma d'URL `app-1-972791352558-ios-a2092bc11167ae02f1f7ff` est déclaré dans `Configuration/AlexisAsya-Info.plist`, fusionné avec l'`Info.plist` généré par Xcode ;
+- **Continuer avec Google** : connexion via le **SDK officiel `GoogleSignIn-iOS`** (`GIDSignIn.sharedInstance.signIn(withPresenting:)`), puis le jeton Google est échangé contre un `AuthCredential` Firebase (`GoogleAuthProvider.credential(withIDToken:accessToken:)`). Le `REVERSED_CLIENT_ID` du plist est déclaré comme URL Type dans `Configuration/AlexisAsya-Info.plist`, avec le flag `-ObjC` dans *Other Linker Flags* ;
 - **Continuer avec Apple** : bouton natif `ASAuthorizationAppleIDProvider` (`AlexisAsya/viewmodel/AppleSignInCoordinator.swift`). Le nonce est haché en SHA-256 pour Apple et transmis brut à Firebase (`OAuthProvider.credential(providerID: .apple, idToken:rawNonce:)`). La capability est déclarée dans `Configuration/AlexisAsya.entitlements` via `CODE_SIGN_ENTITLEMENTS` ;
 - la session est **restaurée au lancement** (`restoreSession()`), et un bouton **Déconnexion** est disponible dans la barre du haut de la liste ;
 - **les favoris sont propres à chaque compte** : `PokemonFavoriteViewModel(userID: uid)` lit/écrit dans `UserDefaults` sous `pokeapp.favorites.<uid>`. Changer de compte recrée le view model (`onChange(of: authViewModel.user?.uid)` dans `AbApp.swift`), donc les favoris de l'utilisateur précédent ne sont jamais affichés. Sans compte (tests), les favoris restent uniquement en mémoire.
 
 Côté projet :
 
-- dépendances SPM **`FirebaseCore` + `FirebaseAuth`** sur la cible `AlexisAsya`, figées en **12.19.3** (la 13.2.0 télécharge un binaire `grpc` invalide avec Xcode 26.3) ;
-- `GoogleService-Info.plist` (projet `pokeapp-17bf6`, bundle `com.AA.AlexisAsya`) ajouté aux ressources de la cible iOS ;
+- dépendances SPM **`FirebaseCore` + `FirebaseAuth`** sur la cible `AlexisAsya`, figées en **12.19.3** (la 13.2.0 télécharge un binaire `grpc` invalide avec Xcode 26.3), et **`GoogleSignIn` + `GoogleSignInSwift` (10.1.0)** du package `GoogleSignIn-iOS` ;
+- `GoogleService-Info.plist` (projet `pokeapp-17bf6`, bundle `com.AA.AlexisAsya`) ajouté aux ressources de la cible iOS. C'est la **version téléchargée après activation de Google** dans la console : elle contient `CLIENT_ID` et `REVERSED_CLIENT_ID` ;
+- `OTHER_LDFLAGS = -ObjC` sur la cible iOS (requis par Google Sign-In), et deux URL Schemes : le callback Firebase `app-1-…` et le `REVERSED_CLIENT_ID` `com.googleusercontent.apps.…` ;
 - `FirebaseApp.configure()` est appelé dans l'`init()` de `AlexisAsya/app/AbApp.swift`, avant tout accès à `Auth.auth()` ;
 - Analytics reste **désactivé** : il n'est pas nécessaire pour l'authentification.
 
@@ -135,8 +136,8 @@ Côté projet :
 | 6. `AuthManager` (`ObservableObject`) | ⚠️ | Voir « Choix techniques » ci-dessous. |
 | 7. Écran de connexion (`AuthView`) | ✅ | `LoginView.swift` : champs en `@State`, boutons *Se connecter* / *Créer un compte* qui appellent bien le gestionnaire d'auth. |
 | 8. `ContentView` racine + `HomeView` + déconnexion | ⚠️ | Aiguillage fait dans `AbApp.swift`, écran connecté = `ContentView.swift` (pas de `HomeView.swift`). Bouton **Déconnexion** présent et `signOut()` remet l'utilisateur à `nil`. L'**email de l'utilisateur n'est pas affiché** sur cet écran. |
-| 9. GoogleSignIn-iOS + `-ObjC` + `REVERSED_CLIENT_ID` | ⚠️ | Voir « Choix techniques » : connexion Google fonctionnelle mais **sans** le SDK Google. |
-| 10. Relier Google à Firebase | ✅ | `signInWithGoogle()` + `.onOpenURL { Auth.auth().canHandle($0) }` + `Auth.auth().signIn(with: credential)`. Parcours testé avec un vrai compte Google. |
+| 9. GoogleSignIn-iOS + `-ObjC` + `REVERSED_CLIENT_ID` | ✅ | Package `GoogleSignIn-iOS` 10.1.0 (produits `GoogleSignIn` et `GoogleSignInSwift`), `-ObjC` dans *Other Linker Flags*, `REVERSED_CLIENT_ID` présent dans les URL Types. |
+| 10. Relier Google à Firebase | ✅ | `signInWithGoogle()` : `GIDSignIn` renvoie l'`idToken`, converti en `GoogleAuthProvider.credential(withIDToken:accessToken:)`, puis `Auth.auth().signIn(with:)`. `.onOpenURL` appelle `GIDSignIn.sharedInstance.handle(url)`. |
 | 11. Capability Sign in with Apple + config Firebase | ❌ | Capability **déclarée** dans `Configuration/AlexisAsya.entitlements` (`CODE_SIGN_ENTITLEMENTS`), mais aucun `DEVELOPMENT_TEAM` dans Xcode et aucun Service ID / Team ID / Key ID / clé privée renseignés côté Firebase. Le fournisseur Apple n'est donc pas activé. |
 | 12. Nonce + credential Apple | ✅ | `AppleSignInCoordinator.swift` : nonce brut conservé, hash SHA-256 envoyé à Apple, `OAuthProvider.credential(providerID: .apple, idToken:rawNonce:)`. Non testable en l'état (voir étape 11). |
 
@@ -144,7 +145,7 @@ Côté projet :
 
 #### Choix techniques à expliquer au correcteur
 
-- **Google sans le SDK `GoogleSignIn-iOS` (étapes 8 et 9).** Le `GoogleService-Info.plist` fourni est une version ancienne, sans `CLIENT_ID` ni `REVERSED_CLIENT_ID`. Plutôt que de retélécharger le fichier et d'ajouter un second package + le flag `-ObjC`, l'app utilise le **flux OAuth web officiel de Firebase Auth** : `OAuthProvider(providerID: "google.com").credential(with: nil)`. Le schéma d'URL déclaré, `app-1-972791352558-ios-a2092bc11167ae02f1f7ff`, est le callback Firebase (dérivé du `GOOGLE_APP_ID`), équivalent fonctionnel au `REVERSED_CLIENT_ID` pour ce flux. Résultat observé : le sélecteur de compte Google s'ouvre et l'utilisateur est bien connecté dans Firebase.
+- **Google (étapes 8, 9 et 10).** Le premier `GoogleService-Info.plist` était une version ancienne sans `CLIENT_ID` ni `REVERSED_CLIENT_ID` ; il a été **retéléchargé depuis la console Firebase après activation de Google**, puis remplacé dans le projet. Le SDK `GoogleSignIn-iOS` a ensuite été ajouté par SPM avec le flag `-ObjC` et l'URL Scheme `REVERSED_CLIENT_ID`. L'ancien callback `app-1-…` a été conservé à côté : il reste sans effet pour le SDK mais permet de revenir au flux web Firebase si besoin.
 - **`@Observable` plutôt que `ObservableObject` (étape 6).** API d'observation SwiftUI moderne (iOS 17+), équivalent à `ObservableObject`/`@Published`. Les trois propriétés demandées sont présentes dans `AuthViewModel` : `user`, `isAuthenticated`, `errorMessage`. `LoginView` reçoit le gestionnaire via `@Bindable`, l'écran principal via `@Environment`.
 - **`Firebase` figé en 12.19.3 (étape 3).** La version 13.2.0 échoue à l'installation sous Xcode 26.3 avec `downloaded archive of binary target 'grpcpp' ... does not contain a binary artifact.` La 12.19.3 est la dernière version compatible avec cet environnement.
 - **Favoris par compte (bonus hors TP).** `PokemonFavoriteViewModel(userID: uid)` stocke les favoris sous `pokeapp.favorites.<uid>` ; changer de compte recrée le view model, donc les favoris d'un autre utilisateur ne sont jamais affichés.
@@ -215,6 +216,8 @@ AlexisAsyaWidget/
 Configuration/
   AlexisAsyaWidget-Info.plist     point d'extension WidgetKit (iOS)
   AlexisAsyaWatchComplication-Info.plist
+  AlexisAsya-Info.plist           URL Types (REVERSED_CLIENT_ID Google + callback Firebase)
+  AlexisAsya.entitlements         capability « Sign in with Apple »
 
 AlexisAsyaWatch/
   AlexisAsyaWatchApp.swift        @main de l'app watchOS

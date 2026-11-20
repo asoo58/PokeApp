@@ -91,6 +91,9 @@ final class AppleSignInCoordinator: NSObject,
 enum AuthError: LocalizedError {
     case appleTokenMissing
     case appleCanceled
+    case googleConfigMissing
+    case noPresentingViewController
+    case googleTokenMissing
 
     var errorDescription: String? {
         switch self {
@@ -98,6 +101,12 @@ enum AuthError: LocalizedError {
             return "Apple n'a pas renvoyé de jeton d'identité. Réessaie."
         case .appleCanceled:
             return "Connexion Apple annulée."
+        case .googleConfigMissing:
+            return "Configuration Google introuvable dans GoogleService-Info.plist."
+        case .noPresentingViewController:
+            return "Impossible d'afficher la fenêtre de connexion Google."
+        case .googleTokenMissing:
+            return "Google n'a pas renvoyé de jeton d'identité. Réessaie."
         }
     }
 }

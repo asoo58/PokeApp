@@ -10,6 +10,8 @@
 		1B6D890B2FC9B3150023E3BF /* PokemonAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 1B6D890A2FC9B3150023E3BF /* PokemonAPI */; };
 		1B862B8530B03BC10044DFD3 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C4D5E6F708192A3B4D /* FirebaseCore */; };
 		1B862B8630B03BC10044DFD3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C4D5E6F708192A3B4E /* FirebaseAuth */; };
+		A2B1C3D40000000000000004 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A2B1C3D40000000000000002 /* GoogleSignIn */; };
+		A2B1C3D40000000000000005 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A2B1C3D40000000000000003 /* GoogleSignInSwift */; };
 		A1B2C3D4000000000000000D /* AlexisAsyaWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* AlexisAsyaWatch.app */; };
 		A1B2C3D40000000000000020 /* AlexisAsyaWatchComplication.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000015 /* AlexisAsyaWatchComplication.appex */; };
 		A1B2C3D40000000000000024 /* AlexisAsyaWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000021 /* AlexisAsyaWidget.appex */; };
@@ -134,6 +136,8 @@
 				1B862B8630B03BC10044DFD3 /* FirebaseAuth in Frameworks */,
 				1B862B8530B03BC10044DFD3 /* FirebaseCore in Frameworks */,
 				1B6D890B2FC9B3150023E3BF /* PokemonAPI in Frameworks */,
+				A2B1C3D40000000000000004 /* GoogleSignIn in Frameworks */,
+				A2B1C3D40000000000000005 /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +227,8 @@
 				1B6D890A2FC9B3150023E3BF /* PokemonAPI */,
 				F1A2B3C4D5E6F708192A3B4D /* FirebaseCore */,
 				F1A2B3C4D5E6F708192A3B4E /* FirebaseAuth */,
+				A2B1C3D40000000000000002 /* GoogleSignIn */,
+				A2B1C3D40000000000000003 /* GoogleSignInSwift */,
 			);
 			productName = AlexisAsya;
 			productReference = 1B6D88C12FC989CC0023E3BF /* AlexisAsya.app */;
@@ -361,6 +367,7 @@
 			packageReferences = (
 				1B6D89092FC9B3150023E3BF /* XCRemoteSwiftPackageReference "PokemonAPI" */,
 				F1A2B3C4D5E6F708192A3B4C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				A2B1C3D40000000000000001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1B6D88C22FC989CC0023E3BF /* Products */;
@@ -607,6 +614,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Configuration/AlexisAsya-Info.plist";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				INFOPLIST_KEY_CFBundleDisplayName = "PokéApp";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -640,6 +651,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Configuration/AlexisAsya-Info.plist";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				INFOPLIST_KEY_CFBundleDisplayName = "PokéApp";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -934,6 +949,14 @@
 				minimumVersion = 12.9.0;
 			};
 		};
+		A2B1C3D40000000000000001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -951,6 +974,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1A2B3C4D5E6F708192A3B4C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		A2B1C3D40000000000000002 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A2B1C3D40000000000000001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		A2B1C3D40000000000000003 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A2B1C3D40000000000000001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth
+import GoogleSignIn
 
 @main
 struct AlexisAsya: App {
@@ -30,8 +31,11 @@ struct AlexisAsya: App {
                 favoriteViewModel = PokemonFavoriteViewModel(userID: uid)
             }
             .onOpenURL { url in
-                // Nécessaire au retour du flux OAuth Google.
-                _ = Auth.auth().canHandle(url)
+                // GoogleSignIn rend la main à l'app après le choix du compte ;
+                // Firebase gère également ses propres URLs de retour OAuth.
+                if !GIDSignIn.sharedInstance.handle(url) {
+                    _ = Auth.auth().canHandle(url)
+                }
             }
         }
     }

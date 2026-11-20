@@ -1,16 +1,16 @@
 import SwiftUI
+import UIKit
+import FirebaseCore
 import FirebaseAuth
+import GoogleSignIn
 
-/// Gère la session Firebase : inscription, connexion (email ou Google), déconnexion.
+/// Gère la session Firebase : inscription, connexion (email, Google ou Apple), déconnexion.
 @MainActor
 @Observable
 final class AuthViewModel {
     private(set) var user: User?
     private(set) var isBusy = false
     var errorMessage: String?
-
-    /// Gardé vivant pendant le flux OAuth, sinon le ticket peut être libéré trop tôt.
-    private var googleProvider: OAuthProvider?
 
     var isAuthenticated: Bool { user != nil }
 
@@ -49,24 +49,59 @@ final class AuthViewModel {
         }
     }
 
-    /// Connexion avec Google via le flux web officiel Firebase Auth.
-    /// Aucun SDK Google supplémentaire n'est nécessaire.
+    /// Connexion avec le SDK officiel GoogleSignIn-iOS, puis liaison du jeton à Firebase Auth.
     func signInWithGoogle() async {
         guard !isBusy else { return }
         isBusy = true
         defer { isBusy = false }
         do {
-            let provider = OAuthProvider(providerID: "google.com")
-            googleProvider = provider
-            let credential = try await provider.credential(with: nil)
+            guard let clientID = FirebaseApp.app()?.options.clientID else {
+                throw AuthError.googleConfigMissing
+            }
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+
+            guard let presenting = Self.topViewController() else {
+                throw AuthError.noPresentingViewController
+            }
+
+            let signInResult: GIDSignInResult = try await withCheckedThrowingContinuation { continuation in
+                GIDSignIn.sharedInstance.signIn(withPresenting: presenting) { result, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else if let result {
+                        continuation.resume(returning: result)
+                    } else {
+                        continuation.resume(throwing: AuthError.googleTokenMissing)
+                    }
+                }
+            }
+
+            guard let idToken = signInResult.user.idToken?.tokenString else {
+                throw AuthError.googleTokenMissing
+            }
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: signInResult.user.accessToken.tokenString
+            )
             let result = try await Auth.auth().signIn(with: credential)
             user = result.user
             errorMessage = nil
-            googleProvider = nil
         } catch {
             errorMessage = error.localizedDescription
-            googleProvider = nil
         }
+    }
+
+    /// Fenêtre depuis laquelle Google présente son sélecteur de compte.
+    private static func topViewController() -> UIViewController? {
+        let windowScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+
+        var controller = windowScene?.windows.first(where: { $0.isKeyWindow })?.rootViewController
+        while let presented = controller?.presentedViewController {
+            controller = presented
+        }
+        return controller
     }
 
     /// Connexion avec Apple via le bouton natif « Sign in with Apple ».
