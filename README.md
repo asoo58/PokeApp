@@ -109,7 +109,8 @@ L'app affiche un **écran de connexion** tant qu'aucun utilisateur n'est connect
 - **E-mail / mot de passe** : inscription (`Créer un compte`) et connexion ;
 - **Continuer avec Google** : connexion via le flux OAuth web officiel de Firebase Auth (`OAuthProvider(providerID: "google.com")`). Aucun SDK Google supplémentaire n'est nécessaire : le schéma d'URL `app-1-972791352558-ios-a2092bc11167ae02f1f7ff` est déclaré dans `Configuration/AlexisAsya-Info.plist`, fusionné avec l'`Info.plist` généré par Xcode ;
 - **Continuer avec Apple** : bouton natif `ASAuthorizationAppleIDProvider` (`AlexisAsya/viewmodel/AppleSignInCoordinator.swift`). Le nonce est haché en SHA-256 pour Apple et transmis brut à Firebase (`OAuthProvider.credential(providerID: .apple, idToken:rawNonce:)`). La capability est déclarée dans `Configuration/AlexisAsya.entitlements` via `CODE_SIGN_ENTITLEMENTS` ;
-- la session est **restaurée au lancement** (`restoreSession()`), et un bouton **Déconnexion** est disponible dans la barre du haut de la liste.
+- la session est **restaurée au lancement** (`restoreSession()`), et un bouton **Déconnexion** est disponible dans la barre du haut de la liste ;
+- **les favoris sont propres à chaque compte** : `PokemonFavoriteViewModel(userID: uid)` lit/écrit dans `UserDefaults` sous `pokeapp.favorites.<uid>`. Changer de compte recrée le view model (`onChange(of: authViewModel.user?.uid)` dans `AbApp.swift`), donc les favoris de l'utilisateur précédent ne sont jamais affichés. Sans compte (tests), les favoris restent uniquement en mémoire.
 
 Côté projet :
 
@@ -151,7 +152,7 @@ xcodebuild -project AlexisAsya.xcodeproj -scheme AlexisAsyaTests \
   test
 ```
 
-Une réussite affiche `Executed 27 tests, with 0 failures` puis `** TEST SUCCEEDED **`.
+Une réussite affiche `Executed 28 tests, with 0 failures` puis `** TEST SUCCEEDED **`.
 
 Pour retrouver les résultats :
 

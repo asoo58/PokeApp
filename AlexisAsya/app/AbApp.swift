@@ -25,6 +25,10 @@ struct AlexisAsya: App {
             .task {
                 authViewModel.restoreSession()
             }
+            .onChange(of: authViewModel.user?.uid) { _, uid in
+                // Chaque compte Firebase a ses propres favoris.
+                favoriteViewModel = PokemonFavoriteViewModel(userID: uid)
+            }
             .onOpenURL { url in
                 // Nécessaire au retour du flux OAuth Google.
                 _ = Auth.auth().canHandle(url)
