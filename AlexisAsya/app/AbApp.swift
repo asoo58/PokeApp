@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import FirebaseAuth
 
 @main
 struct AlexisAsya: App {
@@ -23,6 +24,10 @@ struct AlexisAsya: App {
             }
             .task {
                 authViewModel.restoreSession()
+            }
+            .onOpenURL { url in
+                // Nécessaire au retour du flux OAuth Google.
+                _ = Auth.auth().canHandle(url)
             }
         }
     }

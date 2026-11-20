@@ -1,12 +1,16 @@
 import SwiftUI
 import FirebaseAuth
 
-/// Gère la session Firebase : inscription, connexion, déconnexion.
+/// Gère la session Firebase : inscription, connexion (email ou Google), déconnexion.
 @MainActor
 @Observable
 final class AuthViewModel {
     private(set) var user: User?
+    private(set) var isBusy = false
     var errorMessage: String?
+
+    /// Gardé vivant pendant le flux OAuth, sinon le ticket peut être libéré trop tôt.
+    private var googleProvider: OAuthProvider?
 
     var isAuthenticated: Bool { user != nil }
 
@@ -20,8 +24,12 @@ final class AuthViewModel {
     }
 
     func signIn(email: String, password: String) async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
         do {
-            try await Auth.auth().signIn(withEmail: email, password: password)
+            let result = try await Auth.auth().signIn(withEmail: email, password: password)
+            user = result.user
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -29,6 +37,9 @@ final class AuthViewModel {
     }
 
     func signUp(email: String, password: String) async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
         do {
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
             user = result.user
@@ -38,7 +49,28 @@ final class AuthViewModel {
         }
     }
 
+    /// Connexion avec Google via le flux web officiel Firebase Auth.
+    /// Aucun SDK Google supplémentaire n'est nécessaire.
+    func signInWithGoogle() async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            let provider = OAuthProvider(providerID: "google.com")
+            googleProvider = provider
+            let credential = try await provider.credential(with: nil)
+            let result = try await Auth.auth().signIn(with: credential)
+            user = result.user
+            errorMessage = nil
+            googleProvider = nil
+        } catch {
+            errorMessage = error.localizedDescription
+            googleProvider = nil
+        }
+    }
+
     func signOut() {
+        guard !isBusy else { return }
         do {
             try Auth.auth().signOut()
             user = nil

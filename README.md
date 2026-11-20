@@ -102,6 +102,21 @@ La barre de recherche est **tout en haut de la page d'accueil**, au-dessus du Po
 - un appui sur un résultat ouvre sa fiche (image, types, stats, capacités, ajout aux favoris) ;
 - les listes (noms et types) sont mises en cache dans `UserDefaults` : la recherche fonctionne ensuite hors-ligne.
 
+## Authentification (Firebase)
+
+L'app affiche un **écran de connexion** tant qu'aucun utilisateur n'est connecté (`AlexisAsya/view/LoginView.swift`) :
+
+- **E-mail / mot de passe** : inscription (`Créer un compte`) et connexion ;
+- **Continuer avec Google** : connexion via le flux OAuth web officiel de Firebase Auth (`OAuthProvider(providerID: "google.com")`). Aucun SDK Google supplémentaire n'est nécessaire : le schéma d'URL `app-1-972791352558-ios-a2092bc11167ae02f1f7ff` est déclaré dans `Configuration/AlexisAsya-Info.plist`, fusionné avec l'`Info.plist` généré par Xcode ;
+- la session est **restaurée au lancement** (`restoreSession()`), et un bouton **Déconnexion** est disponible dans la barre du haut de la liste.
+
+Côté projet :
+
+- dépendances SPM **`FirebaseCore` + `FirebaseAuth`** sur la cible `AlexisAsya`, figées en **12.19.3** (la 13.2.0 télécharge un binaire `grpc` invalide avec Xcode 26.3) ;
+- `GoogleService-Info.plist` (projet `pokeapp-17bf6`, bundle `com.AA.AlexisAsya`) ajouté aux ressources de la cible iOS ;
+- `FirebaseApp.configure()` est appelé dans l'`init()` de `AlexisAsya/app/AbApp.swift`, avant tout accès à `Auth.auth()` ;
+- Analytics reste **désactivé** : il n'est pas nécessaire pour l'authentification.
+
 ## Tests & résistance aux clics multiples
 
 Deux garde-fous sont partagés entre l'iPhone et la Watch (`Shared/ActionGuard.swift`) :

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Écran de connexion Firebase (email + mot de passe).
+/// Écran de connexion Firebase (email + mot de passe, ou Google).
 struct LoginView: View {
     @Bindable var auth: AuthViewModel
     @State private var email = ""
@@ -39,7 +39,7 @@ struct LoginView: View {
                         Text(isSignUp ? "Créer un compte" : "Se connecter")
                             .frame(maxWidth: .infinity)
                     }
-                    .disabled(email.isEmpty || password.count < 6)
+                    .disabled(email.isEmpty || password.count < 6 || auth.isBusy)
 
                     Button {
                         isSignUp.toggle()
@@ -49,6 +49,24 @@ struct LoginView: View {
                                       : "Pas encore de compte ? S'inscrire")
                             .frame(maxWidth: .infinity)
                     }
+                    .disabled(auth.isBusy)
+                }
+
+                Section {
+                    Button {
+                        Task {
+                            await auth.signInWithGoogle()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "g.circle.fill")
+                            Text("Continuer avec Google")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(auth.isBusy)
+                } footer: {
+                    Text("Connexion sécurisée via Firebase Authentication.")
                 }
             }
             .navigationTitle("PokéApp")
