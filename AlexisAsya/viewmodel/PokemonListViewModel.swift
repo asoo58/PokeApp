@@ -1,6 +1,10 @@
 import SwiftUI
 import PokemonAPI
 
+/// Toutes les mutations du cache (liste, types, filtres) sont sérialisées sur
+/// le MainActor : le préchargement réseau et `cacheTypes(for:)` peuvent sinon
+/// écrire le même dictionnaire en parallèle et le corrompre.
+@MainActor
 @Observable
 class PokemonListViewModel {
     private let pokemonAPI = PokemonAPI()
@@ -78,9 +82,12 @@ class PokemonListViewModel {
         }
     }
 
-    private func fetchPokemonNames(forType type_: String) async -> (String, [String]) {
+    /// Non isolée : les 18 requêtes tournent hors du MainActor.
+    /// On crée un client local pour ne pas toucher à l'état de l'instance.
+    nonisolated private func fetchPokemonNames(forType type_: String) async -> (String, [String]) {
+        let api = PokemonAPI()
         do {
-            let result = try await pokemonAPI.pokemonService.fetchType(type_)
+            let result = try await api.pokemonService.fetchType(type_)
             let names = result.pokemon?.compactMap { $0.pokemon?.name } ?? []
             return (type_, names)
         } catch {
