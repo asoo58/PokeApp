@@ -119,7 +119,36 @@ Côté projet :
 - `FirebaseApp.configure()` est appelé dans l'`init()` de `AlexisAsya/app/AbApp.swift`, avant tout accès à `Auth.auth()` ;
 - Analytics reste **désactivé** : il n'est pas nécessaire pour l'authentification.
 
-⚠️ **Pour tester le bouton Apple dans Xcode :** la signature ad-hoc utilisée en ligne de commande ne conserve pas l'entitlement `com.apple.developer.applesignin`. Il faut ouvrir le projet dans Xcode, sélectionner la cible `AlexisAsya` › **Signing & Capabilities** › choisir un **Team** (un compte Apple Developer, même gratuit, suffit), puis vérifier que la capability **Sign in with Apple** est présente. Sans cela, le bouton s'affiche mais la feuille Apple refusera de s'ouvrir. Les parcours **email** et **Google** fonctionnent, eux, sans Team.
+⚠️ **Pour tester le bouton Apple dans Xcode :** la signature ad-hoc utilisée en ligne de commande ne conserve pas l'entitlement `com.apple.developer.applesignin`. Il faut ouvrir le projet dans Xcode, sélectionner la cible `AlexisAsya` › **Signing & Capabilities** › choisir un **Team**, puis vérifier que la capability **Sign in with Apple** est présente. **Celle-ci exige un compte Apple Developer Program payant** : un *Personal Team* gratuit ne la propose pas. Sans cela, le bouton s'affiche mais la feuille Apple refusera de s'ouvrir. Les parcours **email** et **Google** fonctionnent, eux, sans Team.
+
+### Conformité au TP (les 12 étapes demandées)
+
+État vérifié dans le code **et** dans la console Firebase (interrogée par API) :
+
+| Étape du TP | État | Détail |
+|---|---|---|
+| 1. Créer le projet Firebase + enregistrer l'app iOS | ✅ | Projet `pokeapp-17bf6`, app iOS enregistrée avec le bundle `com.AA.AlexisAsya` (identique à Xcode). Analytics désactivé, comme demandé. |
+| 2. Ajouter `GoogleService-Info.plist` | ✅ | Nom exact, à la racine, cochée dans les ressources de la cible `AlexisAsya`. |
+| 3. Installer le SDK via SPM | ✅ | `FirebaseCore` + `FirebaseAuth` sur la cible iOS ; `Cmd + B` compile. |
+| 4. `FirebaseApp.configure()` dans `init()` | ✅ | `AlexisAsya/app/AbApp.swift`. |
+| 5. Activer les 3 fournisseurs | ⚠️ | **Email/Password ✅** (l'API répond `WEAK_PASSWORD`) ; **Google ✅** (l'API renvoie une URL Google valide) ; **Apple ❌** (l'API répond `OPERATION_NOT_ALLOWED : Code flow is not enabled for Apple.`). |
+| 6. `AuthManager` (`ObservableObject`) | ⚠️ | Voir « Choix techniques » ci-dessous. |
+| 7. Écran de connexion (`AuthView`) | ✅ | `LoginView.swift` : champs en `@State`, boutons *Se connecter* / *Créer un compte* qui appellent bien le gestionnaire d'auth. |
+| 8. `ContentView` racine + `HomeView` + déconnexion | ⚠️ | Aiguillage fait dans `AbApp.swift`, écran connecté = `ContentView.swift` (pas de `HomeView.swift`). Bouton **Déconnexion** présent et `signOut()` remet l'utilisateur à `nil`. L'**email de l'utilisateur n'est pas affiché** sur cet écran. |
+| 9. GoogleSignIn-iOS + `-ObjC` + `REVERSED_CLIENT_ID` | ⚠️ | Voir « Choix techniques » : connexion Google fonctionnelle mais **sans** le SDK Google. |
+| 10. Relier Google à Firebase | ✅ | `signInWithGoogle()` + `.onOpenURL { Auth.auth().canHandle($0) }` + `Auth.auth().signIn(with: credential)`. Parcours testé avec un vrai compte Google. |
+| 11. Capability Sign in with Apple + config Firebase | ❌ | Capability **déclarée** dans `Configuration/AlexisAsya.entitlements` (`CODE_SIGN_ENTITLEMENTS`), mais aucun `DEVELOPMENT_TEAM` dans Xcode et aucun Service ID / Team ID / Key ID / clé privée renseignés côté Firebase. Le fournisseur Apple n'est donc pas activé. |
+| 12. Nonce + credential Apple | ✅ | `AppleSignInCoordinator.swift` : nonce brut conservé, hash SHA-256 envoyé à Apple, `OAuthProvider.credential(providerID: .apple, idToken:rawNonce:)`. Non testable en l'état (voir étape 11). |
+
+**Bilan : les parcours Email et Google sont réels et testés ; le parcours Apple est prêt côté code mais bloqué côté configuration.** Le TP prévoit explicitement ce cas : *« Prérequis : un compte Apple Developer Program payant. Sans lui, terminez Email + Google et revenez plus tard. »*
+
+#### Choix techniques à expliquer au correcteur
+
+- **Google sans le SDK `GoogleSignIn-iOS` (étapes 8 et 9).** Le `GoogleService-Info.plist` fourni est une version ancienne, sans `CLIENT_ID` ni `REVERSED_CLIENT_ID`. Plutôt que de retélécharger le fichier et d'ajouter un second package + le flag `-ObjC`, l'app utilise le **flux OAuth web officiel de Firebase Auth** : `OAuthProvider(providerID: "google.com").credential(with: nil)`. Le schéma d'URL déclaré, `app-1-972791352558-ios-a2092bc11167ae02f1f7ff`, est le callback Firebase (dérivé du `GOOGLE_APP_ID`), équivalent fonctionnel au `REVERSED_CLIENT_ID` pour ce flux. Résultat observé : le sélecteur de compte Google s'ouvre et l'utilisateur est bien connecté dans Firebase.
+- **`@Observable` plutôt que `ObservableObject` (étape 6).** API d'observation SwiftUI moderne (iOS 17+), équivalent à `ObservableObject`/`@Published`. Les trois propriétés demandées sont présentes dans `AuthViewModel` : `user`, `isAuthenticated`, `errorMessage`. `LoginView` reçoit le gestionnaire via `@Bindable`, l'écran principal via `@Environment`.
+- **`Firebase` figé en 12.19.3 (étape 3).** La version 13.2.0 échoue à l'installation sous Xcode 26.3 avec `downloaded archive of binary target 'grpcpp' ... does not contain a binary artifact.` La 12.19.3 est la dernière version compatible avec cet environnement.
+- **Favoris par compte (bonus hors TP).** `PokemonFavoriteViewModel(userID: uid)` stocke les favoris sous `pokeapp.favorites.<uid>` ; changer de compte recrée le view model, donc les favoris d'un autre utilisateur ne sont jamais affichés.
+- **Concurrence corrigée.** `PokemonListViewModel` est annoté `@MainActor` : le préchargement des types en tâche de fond et `cacheTypes(for:)` n'écrivent plus le même dictionnaire en parallèle (cela provoquait un `SIGABRT` aléatoire). Les requêtes réseau restent parallèles via une fonction `nonisolated` avec son propre client `PokemonAPI`.
 
 ## Tests & résistance aux clics multiples
 
@@ -141,6 +170,7 @@ La cible **`AlexisAsyaTests`** contient les tests correspondants :
 | `SingleFlightActionTests.swift` | 4 tests : appels concurrents fusionnés, drapeau `running`, nouvel appel après fin, appel pendant une tâche en cours |
 | `PokemonFavoriteViewModelTests.swift` | 7 tests : doublons, 10 tapes rapides, même ID, Pokémon distincts, suppression, état, second clic après délai |
 | `PokemonListFilterTests.swift` | 8 tests : préfixe, casse/espaces, requête vide, aucun résultat, filtre par type, type absent, filtres combinés, appels répétés |
+| `PerUserFavoritesTests.swift` | 1 test : favoris isolés entre deux UID Firebase, puis relus après recréation du view model |
 
 Lancer les tests dans Xcode : sélectionner le schéma **`AlexisAsyaTests`** › `Cmd + U`. En ligne de commande :
 
@@ -166,11 +196,17 @@ Pour retrouver les résultats :
 Shared/
   ActionGuard.swift               DebouncedAction + SingleFlightAction (iPhone & Watch)
 
+AlexisAsya/
+  viewmodel/AuthViewModel.swift        session Firebase (email, Google, Apple, déconnexion)
+  viewmodel/AppleSignInCoordinator.swift  bouton natif Apple + nonce SHA-256
+  view/LoginView.swift                 écran de connexion
+
 AlexisAsyaTests/
   DebouncedActionTests.swift      tests de l'anti-double-clic
   SingleFlightActionTests.swift   tests du garde anti-concurrence
   PokemonFavoriteViewModelTests.swift
   PokemonListFilterTests.swift
+  PerUserFavoritesTests.swift     isolation des favoris par compte
 
 AlexisAsyaWidget/
   PokemonWidgetBundle.swift       @main du widget iOS
