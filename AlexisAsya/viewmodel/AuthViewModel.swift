@@ -69,6 +69,24 @@ final class AuthViewModel {
         }
     }
 
+    /// Connexion avec Apple via le bouton natif « Sign in with Apple ».
+    func signInWithApple() async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            let token = try await AppleSignInCoordinator.requestAuthorization()
+            let credential = OAuthProvider.credential(providerID: .apple,
+                                                      idToken: token.idToken,
+                                                      rawNonce: token.rawNonce)
+            let result = try await Auth.auth().signIn(with: credential)
+            user = result.user
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func signOut() {
         guard !isBusy else { return }
         do {

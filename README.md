@@ -108,6 +108,7 @@ L'app affiche un **écran de connexion** tant qu'aucun utilisateur n'est connect
 
 - **E-mail / mot de passe** : inscription (`Créer un compte`) et connexion ;
 - **Continuer avec Google** : connexion via le flux OAuth web officiel de Firebase Auth (`OAuthProvider(providerID: "google.com")`). Aucun SDK Google supplémentaire n'est nécessaire : le schéma d'URL `app-1-972791352558-ios-a2092bc11167ae02f1f7ff` est déclaré dans `Configuration/AlexisAsya-Info.plist`, fusionné avec l'`Info.plist` généré par Xcode ;
+- **Continuer avec Apple** : bouton natif `ASAuthorizationAppleIDProvider` (`AlexisAsya/viewmodel/AppleSignInCoordinator.swift`). Le nonce est haché en SHA-256 pour Apple et transmis brut à Firebase (`OAuthProvider.credential(providerID: .apple, idToken:rawNonce:)`). La capability est déclarée dans `Configuration/AlexisAsya.entitlements` via `CODE_SIGN_ENTITLEMENTS` ;
 - la session est **restaurée au lancement** (`restoreSession()`), et un bouton **Déconnexion** est disponible dans la barre du haut de la liste.
 
 Côté projet :
@@ -116,6 +117,8 @@ Côté projet :
 - `GoogleService-Info.plist` (projet `pokeapp-17bf6`, bundle `com.AA.AlexisAsya`) ajouté aux ressources de la cible iOS ;
 - `FirebaseApp.configure()` est appelé dans l'`init()` de `AlexisAsya/app/AbApp.swift`, avant tout accès à `Auth.auth()` ;
 - Analytics reste **désactivé** : il n'est pas nécessaire pour l'authentification.
+
+⚠️ **Pour tester le bouton Apple dans Xcode :** la signature ad-hoc utilisée en ligne de commande ne conserve pas l'entitlement `com.apple.developer.applesignin`. Il faut ouvrir le projet dans Xcode, sélectionner la cible `AlexisAsya` › **Signing & Capabilities** › choisir un **Team** (un compte Apple Developer, même gratuit, suffit), puis vérifier que la capability **Sign in with Apple** est présente. Sans cela, le bouton s'affiche mais la feuille Apple refusera de s'ouvrir. Les parcours **email** et **Google** fonctionnent, eux, sans Team.
 
 ## Tests & résistance aux clics multiples
 

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Écran de connexion Firebase (email + mot de passe, ou Google).
+/// Écran de connexion Firebase (email + mot de passe, Apple ou Google).
 struct LoginView: View {
     @Bindable var auth: AuthViewModel
     @State private var email = ""
@@ -53,6 +53,19 @@ struct LoginView: View {
                 }
 
                 Section {
+                    Button {
+                        Task {
+                            await auth.signInWithApple()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "applelogo")
+                            Text("Continuer avec Apple")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(auth.isBusy)
+
                     Button {
                         Task {
                             await auth.signInWithGoogle()
