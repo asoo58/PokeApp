@@ -22,8 +22,6 @@ struct WidgetPokemon {
     let image: UIImage?
     let color: Color
 
-    var primaryType: String { types.first ?? "normal" }
-
     var bestStat: WidgetStat? { stats.max { $0.value < $1.value } }
 
     static func typeName(_ raw: String) -> String {
@@ -47,25 +45,6 @@ struct WidgetPokemon {
         case "steel": return "Acier"
         case "fairy": return "Fée"
         default: return raw.capitalized
-        }
-    }
-
-    static func color(for type: String) -> Color {
-        switch type {
-        case "fire": return .orange
-        case "water": return .blue
-        case "grass": return .green
-        case "electric": return .yellow
-        case "psychic": return .pink
-        case "ice": return .cyan
-        case "fighting": return .red
-        case "poison", "ghost", "dragon": return .purple
-        case "ground", "rock", "normal": return .brown
-        case "flying": return .indigo
-        case "bug": return .mint
-        case "dark", "steel": return .gray
-        case "fairy": return .pink
-        default: return .blue
         }
     }
 
@@ -221,7 +200,6 @@ private struct APIStat: Decodable {
 
 private struct APIAbility: Decodable {
     let ability: APINamed?
-    let isHidden: Bool?
 }
 
 private struct APIType: Decodable {

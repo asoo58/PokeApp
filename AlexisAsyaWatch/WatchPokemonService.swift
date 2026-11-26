@@ -31,8 +31,6 @@ struct WatchPokemon: Identifiable, Equatable {
 
     var displayName: String { name.capitalized }
 
-    var bestStat: WatchStat? { stats.max { $0.value < $1.value } }
-
     static let fallback = WatchPokemon(
         id: 25,
         name: "pikachu",
